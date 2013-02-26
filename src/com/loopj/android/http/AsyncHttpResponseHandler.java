@@ -151,7 +151,7 @@ public class AsyncHttpResponseHandler {
      * @param current the current number of bytes loaded from the response
      * @param total the total number of bytes in the response
      */
-    public void onProgress(int current, int total) {
+    public void onProgress(long current, long total) {
     }
 
     /**
@@ -183,7 +183,7 @@ public class AsyncHttpResponseHandler {
         sendMessage(obtainMessage(FINISH_MESSAGE, null));
     }
 
-    protected void sendProgressMessage(int current, int total) {
+    protected void sendProgressMessage(long current, long total) {
         sendMessage(obtainMessage(PROGRESS_MESSAGE, new Object[] { current, total }));
     }
 
@@ -203,7 +203,7 @@ public class AsyncHttpResponseHandler {
         onFailure(statusCode, responseBody, error);
     }
 
-    protected void handleProgressMessage(int current, int total) {
+    protected void handleProgressMessage(long current, long total) {
         onProgress(current, total);
     }
 
@@ -232,7 +232,7 @@ public class AsyncHttpResponseHandler {
             break;
         case PROGRESS_MESSAGE:
             response = (Object[]) msg.obj;
-            onProgress(((Integer) response[0]).intValue(), ((Integer) response[1]).intValue());
+            onProgress(((Long) response[0]).longValue(), ((Long) response[1]).longValue());
             break;
         case RETRY_MESSAGE:
             onRetry();
@@ -279,12 +279,13 @@ public class AsyncHttpResponseHandler {
                     ByteArrayBuffer buffer = new ByteArrayBuffer((int) contentLength);
                     try {
                         byte[] tmp = new byte[BUFFER_SIZE];
-                        int l, count = 0;
+                        int l;
+                        long count = 0;
                         // do not send messages if request has been cancelled
                         while ((l = instream.read(tmp)) != -1 && !Thread.currentThread().isInterrupted()) {
                             count += l;
                             buffer.append(tmp, 0, l);
-                            sendProgressMessage(count, (int) contentLength);
+                            sendProgressMessage(count, contentLength);
                         }
                     } finally {
                         instream.close();
