@@ -14,12 +14,12 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-*/
+ */
 
 /*
-    Some of the retry logic in this class is heavily borrowed from the
-    fantastic droid-fu project: https://github.com/donnfelker/droid-fu
-*/
+ Some of the retry logic in this class is heavily borrowed from the
+ fantastic droid-fu project: https://github.com/donnfelker/droid-fu
+ */
 
 package com.loopj.android.http;
 
@@ -41,74 +41,74 @@ import org.apache.http.protocol.HttpContext;
 import android.os.SystemClock;
 
 class RetryHandler implements HttpRequestRetryHandler {
-    private static HashSet<Class<?>> exceptionWhitelist = new HashSet<Class<?>>();
-    private static HashSet<Class<?>> exceptionBlacklist = new HashSet<Class<?>>();
+	private static HashSet<Class<?>> exceptionWhitelist = new HashSet<Class<?>>();
+	private static HashSet<Class<?>> exceptionBlacklist = new HashSet<Class<?>>();
 
-    static {
-        // Retry if the server dropped connection on us
-        exceptionWhitelist.add(NoHttpResponseException.class);
-        // retry-this, since it may happens as part of a Wi-Fi to 3G failover
-        exceptionWhitelist.add(UnknownHostException.class);
-        // retry-this, since it may happens as part of a Wi-Fi to 3G failover
-        exceptionWhitelist.add(SocketException.class);
+	static {
+		// Retry if the server dropped connection on us
+		exceptionWhitelist.add(NoHttpResponseException.class);
+		// retry-this, since it may happens as part of a Wi-Fi to 3G failover
+		exceptionWhitelist.add(UnknownHostException.class);
+		// retry-this, since it may happens as part of a Wi-Fi to 3G failover
+		exceptionWhitelist.add(SocketException.class);
 
-        // never retry timeouts
-        exceptionBlacklist.add(InterruptedIOException.class);
-        // never retry SSL handshake failures
-        exceptionBlacklist.add(SSLException.class);
-    }
+		// never retry timeouts
+		exceptionBlacklist.add(InterruptedIOException.class);
+		// never retry SSL handshake failures
+		exceptionBlacklist.add(SSLException.class);
+	}
 
-    private final int maxRetries;
-    private final int retrySleepTimeMS;
+	private final int maxRetries;
+	private final int retrySleepTimeMS;
 
-    public RetryHandler(int maxRetries, int retrySleepTimeMS) {
-        this.maxRetries = maxRetries;
-        this.retrySleepTimeMS = retrySleepTimeMS;
-    }
+	public RetryHandler(int maxRetries, int retrySleepTimeMS) {
+		this.maxRetries = maxRetries;
+		this.retrySleepTimeMS = retrySleepTimeMS;
+	}
 
-    public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
-        boolean retry = true;
+	public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
+		boolean retry = true;
 
-        Boolean b = (Boolean) context.getAttribute(ExecutionContext.HTTP_REQ_SENT);
-        boolean sent = (b != null && b.booleanValue());
+		Boolean b = (Boolean) context.getAttribute(ExecutionContext.HTTP_REQ_SENT);
+		boolean sent = (b != null && b.booleanValue());
 
-        if(executionCount > maxRetries) {
-            // Do not retry if over max retry count
-            retry = false;
-        } else if (isInList(exceptionBlacklist, exception)) {
-            // immediately cancel retry if the error is blacklisted
-            retry = false;
-        } else if (isInList(exceptionWhitelist, exception)) {
-            // immediately retry if error is whitelisted
-            retry = true;
-        } else if (!sent) {
-            // for most other errors, retry only if request hasn't been fully sent yet
-            retry = true;
-        }
+		if (executionCount > maxRetries) {
+			// Do not retry if over max retry count
+			retry = false;
+		} else if (isInList(exceptionBlacklist, exception)) {
+			// immediately cancel retry if the error is blacklisted
+			retry = false;
+		} else if (isInList(exceptionWhitelist, exception)) {
+			// immediately retry if error is whitelisted
+			retry = true;
+		} else if (!sent) {
+			// for most other errors, retry only if request hasn't been fully sent yet
+			retry = true;
+		}
 
-        if(retry) {
-            // resend all idempotent requests
-            HttpUriRequest currentReq = (HttpUriRequest) context.getAttribute( ExecutionContext.HTTP_REQUEST );
-            String requestType = currentReq.getMethod();
-            retry = !requestType.equals("POST");
-        }
+		if (retry) {
+			// resend all idempotent requests
+			HttpUriRequest currentReq = (HttpUriRequest) context.getAttribute(ExecutionContext.HTTP_REQUEST);
+			String requestType = currentReq.getMethod();
+			retry = !requestType.equals("POST");
+		}
 
-        if (retry) {
-            SystemClock.sleep(retrySleepTimeMS);
-        } else {
-            exception.printStackTrace();
-        }
+		if (retry) {
+			SystemClock.sleep(retrySleepTimeMS);
+		} else {
+			exception.printStackTrace();
+		}
 
-        return retry;
-    }
-    
-    protected boolean isInList(HashSet<Class<?>> list, Throwable error) {
-    	Iterator<Class<?>> itr = list.iterator();
-    	while (itr.hasNext()) {
-    		if (itr.next().isInstance(error)) {
-    			return true;
-    		}
-    	}
-    	return false;
-    }
+		return retry;
+	}
+
+	protected boolean isInList(HashSet<Class<?>> list, Throwable error) {
+		Iterator<Class<?>> itr = list.iterator();
+		while (itr.hasNext()) {
+			if (itr.next().isInstance(error)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

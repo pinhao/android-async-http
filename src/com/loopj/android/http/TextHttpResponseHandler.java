@@ -110,6 +110,8 @@ public class TextHttpResponseHandler extends AsyncHttpResponseHandler {
             onSuccess(statusCode, new String(responseBody, _encoding));
         } catch (UnsupportedEncodingException e) {
             onFailure(0, (String) null, e);
+        } catch (NullPointerException e) {
+            onFailure(0, (String) null, e);
         }
     }
 
@@ -119,6 +121,8 @@ public class TextHttpResponseHandler extends AsyncHttpResponseHandler {
             onFailure(statusCode, new String(responseBody, _encoding), error);
         } catch (UnsupportedEncodingException e) {
             onFailure(0, (String) null, e);
+        } catch ( NullPointerException e ) {
+            onFailure(0, (String) null, error);
         }
     }
     
