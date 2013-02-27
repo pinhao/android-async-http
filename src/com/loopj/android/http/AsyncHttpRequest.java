@@ -19,6 +19,8 @@
 package com.loopj.android.http;
 
 import java.io.IOException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 import org.apache.http.HttpResponse;
@@ -87,6 +89,12 @@ class AsyncHttpRequest implements Runnable {
                     // (to assist in genuine cases of unknown host) which seems better than outright failure
                     cause = new IOException("UnknownHostException exception: " + e.getMessage());
                     retry = (executionCount > 0) && retryHandler.retryRequest(cause, ++executionCount, context);
+                } catch ( SocketException e ) {
+                    cause = new IOException("UnknownHostException exception: " + e.getMessage());
+                    retry = retryHandler.retryRequest(cause, ++executionCount, context);
+                } catch (SocketTimeoutException e) {
+                    cause = new IOException("SocketTimeoutException exception: " + e.getMessage());
+                    retry = retryHandler.retryRequest(cause, ++executionCount, context);
                 } catch (IOException e) {
                     cause = e;
                     retry = retryHandler.retryRequest(cause, ++executionCount, context);
